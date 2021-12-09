@@ -26,17 +26,6 @@ int gen_len;
  */
 int len;
 
-
-void print(const int *v, int size) {
-    int i;
-    if (v != 0) {
-        for (i = 0; i < size; i++) {
-            printf("%c", v[i]);
-        }
-        printf("\n");
-    }
-}
-
 bool isBigChar(char c) {
     if (c >= 65 && c <= 90) {
         // BIG CHARACTER
@@ -87,12 +76,11 @@ int next(char *book, int current, int _len) {
             return i;
         }
     }
-    printf("breaking for %c at %d\n", book[current], current);
     return -1;
 }
 
 /**
- * A03.1 Bauen sie ein dreidimensionales Feld auf...
+ * A03_4.1 Bauen sie ein dreidimensionales Feld auf...
  * notes occurrences of c existing after a and b.
  * @param book
  */
@@ -110,11 +98,10 @@ void read(char *book) {
             value_len += 1;
         }
     }
-    printf("Checking values array ... \n");
+    printf("[INFO]Checking values array ... \n");
     for (int i = 0; i < value_len; i++) {
         printf("[INFO]value[%d]= %c;%d\n", i, values[i], (values[i]));
     }
-    printf("Running!\n");
     int i = 0;
     char c0 = book[next(book, 0, len)];
     char c1 = book[next(book, next(book, 0, len), len)];
@@ -179,11 +166,11 @@ void read(char *book) {
 
 
 /**
- * A03.1 Bauen sie ein dreidimensionales Feld auf...
+ * A03_4.1 Bauen sie ein dreidimensionales Feld auf...
  *
  */
 void eval() {
-    printf("[INFO]Evaluating!\n");
+    printf("[INFO]Evaluating data!\n");
     for (int i0 = 0; i0 < value_len; i0++) {
         for (int i1 = 0; i1 < value_len; i1++) {
             double n = 0;
@@ -204,49 +191,54 @@ void eval() {
 }
 
 char vector_array[500];
+long deb = 0;
 
 /**
- * A03.2 Erzeugen eines Vektors...
- * @param values
- * @param probs
+ * A03_4.2 Erzeugen eines Vektors...
+ * @param i0 Erster Index für das Feld prob[][][], also prob[i0][][]
+ * @param i1 Zweiter Index für das Feld prob[][][], also prob[i0][i1][]
  * @return
  */
-char *vector(int i0, int i1) {
-    printf("generating vector!\n");
+void vector(int i0, int i1) {
+    if (deb % 30 == 0)printf("[INFO]Generating vector!\n");
     float offset = 0;
     int c = 0;
     for (int i = 0; i < value_len; i++) {
         //printf("|l...| char = <%c><%d>\n", values[i], (int) values[i]);
         int index = (int) values[i];
         float p = (prob[i0][i1][index]) + offset;
-        double d = 0;
+        float d = 0;
         //printf("Iterating... c = %d, prob = %lf, d = %lf\n", c, p, d);
         while (d < p) {
             //printf("char = %c ", values[i]);
             //printf("Iterating... c = %d, prob = %lf, d = %lf\n", c, p, d);
 
             if (c == 500) {
-                printf("early exit?");
-                return vector_array;
+                if (deb % 30 == 0)printf("[WARNING]Exiting vector generation early...\n");
+                return;
             }
             vector_array[c] = values[i];
-            d += (1.0 / (double) resolution);
+            d += (1.0f / (float) resolution);
             c += 1;
         }
         //printf("Remaining offset:%lf\n", offset);
         offset = p - d;
         //printf("Remaining offset:%lf\n", offset);
     }
-    printf("done with vector!\n");
-    return vector_array;
+    if (deb % 30 == 0)printf("[INFO]Vector generated!\n");
+    deb += 1;
 }
 
 int random(int bound) {
     return rand() % bound;
 }
 
+/**
+ * A03_4.3 Erzeugen eines zufälliges Textes...
+ * @param text_len Länge des Texts.
+ */
 void generate(int text_len) {
-    printf("Generating...\n");
+    printf("[INFO]Generating random text...\n");
     char *array = malloc(text_len + 1);
     char c0 = '.';
     char c1 = ' ';
@@ -267,26 +259,20 @@ void generate(int text_len) {
         //for (int i = 0; i < 500; i++) {
         //    printf("%c", vector_array[i]);
         //}
-        printf("\n");
         c0 = c1;
         c1 = array[i];
-        printf("c1 = %c, %d \n", c1, (int) c1);
     }
-    printf("done!\n");
-    printf("Output text:\n\n");
+    printf("[INFO]Done!\n");
+    printf("[INFO]Output text:\n\n");
 
-    /* File pointer to hold reference to our file */
     FILE *fPtr;
-    /*
-     * Open file in w (write) mode.
-     * "data/file1.txt" is complete path to create file
-     */
     fPtr = fopen("output.txt", "w");
 
-    /* fopen() return NULL if last operation was unsuccessful */
     if (fPtr == NULL) {
-        /* File not created hence exit */
-        printf("Unable to create file.\n");
+        printf("[ERROR]Unable to create file. Output text that was supposed to be stored:\n\n");
+        for (int i = 0; i < text_len; i++) {
+            printf("%c", array[i]);
+        }
         exit(EXIT_FAILURE);
     }
 
@@ -295,10 +281,9 @@ void generate(int text_len) {
         fputc(array[i], fPtr);
     }
     printf("\n\n");
-    /* Close file to save file data */
     fclose(fPtr);
 
-    printf("File <output.txt> created and saved successfully. \n");
+    printf("[INFO]File <output.txt> created and saved successfully. \n");
 }
 
 void simulate() {
@@ -312,12 +297,9 @@ void simulate() {
     fseek(fp, 0L, SEEK_END);
     lSize = ftell(fp);
     rewind(fp);
-
-/* allocate memory for entire content */
     buffer = calloc(1, lSize + 1);
     if (!buffer) fclose(fp), fputs("memory alloc fails", stderr), exit(1);
 
-/* copy the file into the buffer */
     if (1 != fread(buffer, lSize, 1, fp))
         fclose(fp), free(buffer), fputs("entire read fails", stderr), exit(1);
     char *buffer2 = malloc(lSize + 1);
